@@ -1,0 +1,177 @@
+"use client";
+
+import { useState } from "react";
+import { jsPDF } from "jspdf";
+import { saveAs } from "file-saver";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function Home() {
+  const [text, setText] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  const generateFiles = async () => {
+    const ingredients = text.split("\n").map((line) => {
+      const [name, quantity] = line.split(":");
+      return { name: name.trim(), quantity: quantity.trim() };
+    });
+
+    // Generate PDF
+    const pdf = new jsPDF();
+    pdf.setFontSize(12);
+    let yPos = 20;
+    const leftColumn = 20;
+    const rightColumn = 100;
+
+    ingredients.forEach((ingredient, index) => {
+      if (index % 2 === 0 && index !== 0) {
+        yPos += 10;
+      }
+      const column = index % 2 === 0 ? leftColumn : rightColumn;
+      pdf.text(`${ingredient.name}`, column, yPos);
+      pdf.text(`${ingredient.quantity}`, column + 60, yPos, { align: "right" });
+      if (index % 2 !== 0) {
+        yPos += 10;
+      }
+    });
+
+    const pdfBlob = pdf.output("blob");
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    setPdfUrl(pdfUrl);
+
+    // Generate Image
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = Math.max(600, ingredients.length * 15 + 40);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "black";
+      ctx.font = "16px Arial";
+
+      let yPos = 30;
+      const leftColumn = 20;
+      const rightColumn = 400;
+
+      ingredients.forEach((ingredient, index) => {
+        if (index % 2 === 0 && index !== 0) {
+          yPos += 20;
+        }
+        const column = index % 2 === 0 ? leftColumn : rightColumn;
+        ctx.textAlign = "left";
+        ctx.fillText(ingredient.name, column, yPos);
+        ctx.textAlign = "right";
+        ctx.fillText(ingredient.quantity, column + 350, yPos);
+        if (index % 2 !== 0) {
+          yPos += 20;
+        }
+      });
+    }
+
+    const imageBlob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((blob) => resolve(blob as Blob))
+    );
+    const imageUrl = URL.createObjectURL(imageBlob);
+    setImageUrl(imageUrl);
+  };
+
+  const shareOnWhatsApp = async () => {
+    if (pdfUrl && imageUrl) {
+      const files = [
+        new File(
+          [await fetch(pdfUrl).then((r) => r.blob())],
+          "ingredients.pdf",
+          { type: "application/pdf" }
+        ),
+        new File(
+          [await fetch(imageUrl).then((r) => r.blob())],
+          "ingredients.png",
+          { type: "image/png" }
+        ),
+      ];
+
+      if (navigator.share && navigator.canShare({ files })) {
+        try {
+          await navigator.share({
+            files: files,
+            title: "Ingredients List",
+            text: "Here are the ingredients list as PDF and image files.",
+          });
+          console.log("Files shared successfully");
+        } catch (error) {
+          console.error("Error sharing files:", error);
+          shareViaWhatsAppLink();
+        }
+      } else {
+        shareViaWhatsAppLink();
+      }
+    } else {
+      alert("Please generate files before sharing.");
+    }
+  };
+
+  const shareViaWhatsAppLink = () => {
+    const message = encodeURIComponent(
+      `Here are the ingredient lists:\n\nPDF: ${pdfUrl}\nImage: ${imageUrl}\n\nPlease download and view the files.`
+    );
+    const whatsappUrl = `https://wa.me/?text=${message}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  return (
+    <main className="p-4 max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Ingredients List Generator</h1>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="mb-4"
+        placeholder="Enter ingredients (one per line) in format: Ingredient: Quantity"
+        rows={10}
+      />
+      <Button onClick={generateFiles} variant="default" className="mb-4 w-full">
+        Generate Files
+      </Button>
+
+      <Button
+        onClick={shareOnWhatsApp}
+        variant="secondary"
+        className="mb-4 w-full"
+        disabled={!pdfUrl || !imageUrl}
+      >
+        Share on WhatsApp
+      </Button>
+
+      {pdfUrl && (
+        <div className="mt-4">
+          <h2 className="text-xl font-bold">Generated PDF:</h2>
+          <Button
+            onClick={() => window.open(pdfUrl, "_blank")}
+            variant="outline"
+            className="mt-2 w-full"
+          >
+            View PDF
+          </Button>
+        </div>
+      )}
+      {imageUrl && (
+        <div className="mt-4">
+          <h2 className="text-xl font-bold">Generated Image:</h2>
+          <img
+            src={imageUrl}
+            alt="Generated"
+            className="max-w-full h-auto mt-2"
+          />
+          <Button
+            onClick={() => window.open(imageUrl, "_blank")}
+            variant="outline"
+            className="mt-2 w-full"
+          >
+            View Image
+          </Button>
+        </div>
+      )}
+    </main>
+  );
+}

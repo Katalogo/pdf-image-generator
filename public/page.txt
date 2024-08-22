@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 export default function Home() {
   const [text, setText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  //   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const generateFiles = async () => {
     const ingredients = text.split("\n").map((line) => {
@@ -43,49 +43,47 @@ export default function Home() {
     setPdfFile(pdfFile);
 
     // Generate Image
-    // const canvas = document.createElement("canvas");
-    // canvas.width = 800;
-    // canvas.height = Math.max(600, ingredients.length * 17 + 40);
-    // const ctx = canvas.getContext("2d");
-    // if (ctx) {
-    //   ctx.fillStyle = "white";
-    //   ctx.fillRect(0, 0, canvas.width, canvas.height);
-    //   ctx.fillStyle = "black";
-    //   ctx.font = "18px Arial";
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = Math.max(600, ingredients.length * 17 + 40);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "black";
+      ctx.font = "18px Arial";
 
-    //   let yPos = 100;
-    //   const leftColumn = 100;
-    //   const rightColumn = 440;
+      let yPos = 100;
+      const leftColumn = 100;
+      const rightColumn = 440;
 
-    //   ingredients.forEach((ingredient, index) => {
-    //     // if (index % 2 === 0 && index !== 0) {
-    //     //   yPos += 20; // Add space between rows
-    //     // }
-    //     const column = index % 2 === 0 ? leftColumn : rightColumn;
-    //     ctx.textAlign = "left";
-    //     ctx.fillText(ingredient.name, column, yPos);
-    //     ctx.textAlign = "right";
-    //     ctx.fillText(ingredient.quantity, column + 270, yPos);
-    //     if (index % 2 !== 0) {
-    //       yPos += 30; // Move to next line after right column
-    //     }
-    //   });
-    // }
+      ingredients.forEach((ingredient, index) => {
+        // if (index % 2 === 0 && index !== 0) {
+        //   yPos += 20; // Add space between rows
+        // }
+        const column = index % 2 === 0 ? leftColumn : rightColumn;
+        ctx.textAlign = "left";
+        ctx.fillText(ingredient.name, column, yPos);
+        ctx.textAlign = "right";
+        ctx.fillText(ingredient.quantity, column + 270, yPos);
+        if (index % 2 !== 0) {
+          yPos += 30; // Move to next line after right column
+        }
+      });
+    }
 
-    // const imageBlob = await new Promise<Blob>((resolve) =>
-    //   canvas.toBlob((blob) => resolve(blob as Blob))
-    // );
-    // const imageFile = new File([imageBlob], "ingredients.png", {
-    //   type: "image/png",
-    // });
-    // setImageFile(imageFile);
+    const imageBlob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((blob) => resolve(blob as Blob))
+    );
+    const imageFile = new File([imageBlob], "ingredients.png", {
+      type: "image/png",
+    });
+    setImageFile(imageFile);
   };
 
   const shareOnWhatsApp = async () => {
-    // if (pdfFile && imageFile) {
-    //   const files = [pdfFile, imageFile];
-    if (pdfFile) {
-      const files = [pdfFile];
+    if (pdfFile && imageFile) {
+      const files = [pdfFile, imageFile];
       if (navigator.share && navigator.canShare({ files })) {
         try {
           await navigator.share({
@@ -135,7 +133,7 @@ export default function Home() {
         onClick={shareOnWhatsApp}
         variant="secondary"
         className="mb-4 w-full"
-        disabled={!pdfFile}
+        disabled={!pdfFile || !imageFile}
       >
         Share on WhatsApp
       </Button>
@@ -152,7 +150,7 @@ export default function Home() {
           </Button>
         </div>
       )}
-      {/* {imageFile && (
+      {imageFile && (
         <div className="mt-4">
           <h2 className="text-xl font-bold">Generated Image:</h2>
           <img
@@ -168,7 +166,7 @@ export default function Home() {
             Download Image
           </Button>
         </div>
-      )} */}
+      )}
     </main>
   );
 }
