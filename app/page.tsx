@@ -1,113 +1,122 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { jsPDF } from "jspdf";
+import { saveAs } from "file-saver";
+import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Home() {
+  const [text, setText] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  // const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const generateFiles = async () => {
+    // Generate PDF with better formatting
+    const pdf = new jsPDF();
+    pdf.setFontSize(12);
+    const splitText = pdf.splitTextToSize(text, 180);
+    pdf.text(splitText, 15, 20);
+    const pdfBlob = pdf.output("blob");
+    const pdfFile = new File([pdfBlob], "generated.pdf", {
+      type: "application/pdf",
+    });
+    setPdfFile(pdfFile);
+
+    // Generate Image with better formatting
+    // const canvas = document.createElement("canvas");
+    // canvas.width = 600;
+    // canvas.height = 400;
+    // const ctx = canvas.getContext("2d");
+    // if (ctx) {
+    //   ctx.fillStyle = "white";
+    //   ctx.fillRect(0, 0, canvas.width, canvas.height);
+    //   ctx.fillStyle = "black";
+    //   ctx.font = "16px Arial";
+    //   const lines = text.split("\n");
+    //   lines.forEach((line, index) => {
+    //     ctx.fillText(line, 20, 30 + index * 20);
+    //   });
+    // }
+    // const imageBlob = await new Promise<Blob>((resolve) =>
+    //   canvas.toBlob((blob) => resolve(blob as Blob))
+    // );
+    // const imageFile = new File([imageBlob], "generated.png", {
+    //   type: "image/png",
+    // });
+    // setImageFile(imageFile);
+  };
+
+  const shareOnWhatsApp = async () => {
+    if (pdfFile) {
+      const files = [pdfFile];
+      if (navigator.share && navigator.canShare({ files })) {
+        try {
+          await navigator.share({
+            files: files,
+            title: "Generated Files",
+            text: "Here are the generated PDF and image files.",
+          });
+          console.log("Files shared successfully");
+        } catch (error) {
+          console.error("Error sharing files:", error);
+          manualShareInstructions();
+        }
+      } else {
+        manualShareInstructions();
+      }
+    } else {
+      alert("Please generate files before sharing.");
+    }
+  };
+
+  const manualShareInstructions = () => {
+    alert(
+      "To share these files on WhatsApp:\n" +
+        "1. Download both the PDF and PNG files.\n" +
+        "2. Open WhatsApp on your device.\n" +
+        "3. Choose the contact or group you want to send the files to.\n" +
+        "4. Tap the attachment icon and select the downloaded files.\n" +
+        "5. Send the message with the attached files."
+    );
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="p-4 max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-4">PDF and Image Generator</h1>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="mb-4"
+        placeholder="Enter text to generate files"
+        rows={5}
+      />
+      <Button onClick={generateFiles} variant="default" className="mb-4 w-full">
+        Generate Files
+      </Button>
+
+      <Button
+        onClick={shareOnWhatsApp}
+        variant="secondary"
+        className="mb-4 w-full"
+        disabled={!pdfFile}
+      >
+        Share on WhatsApp
+      </Button>
+
+      {pdfFile && (
+        <div className="mt-4">
+          <h2 className="text-xl font-bold">Generated PDF:</h2>
+          <Button
+            onClick={() => saveAs(pdfFile, "generated.pdf")}
+            variant="outline"
+            className="mt-2 w-full"
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            Download PDF
+          </Button>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      )}
     </main>
   );
 }
