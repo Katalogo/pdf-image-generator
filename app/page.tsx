@@ -4,11 +4,13 @@ import { useState } from "react";
 import { jsPDF } from "jspdf";
 import { saveAs } from "file-saver";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function Home() {
   const [text, setText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
   //   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const generateFiles = async () => {
@@ -86,7 +88,7 @@ export default function Home() {
     //   const files = [pdfFile, imageFile];
     if (pdfFile) {
       const files = [pdfFile];
-      if (navigator.share && navigator.canShare({ files })) {
+      if (!navigator.share && navigator.canShare({ files })) {
         try {
           await navigator.share({
             files: files,
@@ -96,17 +98,39 @@ export default function Home() {
           console.log("Files shared successfully");
         } catch (error) {
           console.error("Error sharing files:", error);
-          manualShareInstructions();
+          //   manualShareInstructions();
+          shareToSpecificNumber();
         }
       } else {
-        manualShareInstructions();
+        // manualShareInstructions();
+        shareToSpecificNumber();
       }
     } else {
       alert("Please generate files before sharing.");
     }
   };
 
-  const manualShareInstructions = () => {
+  //   const manualShareInstructions = () => {
+  const shareToSpecificNumber = () => {
+    if (!phoneNumber) {
+      alert("Please enter a valid Indian WhatsApp number.");
+      return;
+    }
+
+    // Remove any non-digit characters from the phone number
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
+    console.log(cleanNumber);
+
+    // Check if the number starts with '91' (India country code)
+    const formattedNumber = cleanNumber.startsWith("91")
+      ? cleanNumber
+      : `91${cleanNumber}`;
+
+    // Create a WhatsApp URL
+    const whatsappUrl = `https://wa.me/${formattedNumber}`;
+
+    // Open WhatsApp in a new tab
+    window.open(whatsappUrl, "_blank");
     alert(
       "To share these files on WhatsApp:\n" +
         "1. Download both the PDF and PNG files.\n" +
@@ -130,7 +154,13 @@ export default function Home() {
       <Button onClick={generateFiles} variant="default" className="mb-4 w-full">
         Generate Files
       </Button>
-
+      <Input
+        type="tel"
+        placeholder="Enter Indian WhatsApp number"
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
+        className="mb-4"
+      />
       <Button
         onClick={shareOnWhatsApp}
         variant="secondary"
