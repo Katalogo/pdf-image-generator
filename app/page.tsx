@@ -85,9 +85,31 @@ export default function Home() {
     setImageFile(imageFile);
   };
 
-  const shareOnWhatsApp = async () => {
-    if (pdfFile && imageFile) {
-      const files = [pdfFile, imageFile];
+  const sharepdfOnWhatsApp = async () => {
+    if (pdfFile) {
+      const files = [pdfFile];
+      if (navigator.share && navigator.canShare({ files })) {
+        try {
+          await navigator.share({
+            files: files,
+            title: "Ingredients List",
+            text: "Here are the ingredients list as PDF and image files.",
+          });
+          console.log("Files shared successfully");
+        } catch (error) {
+          console.error("Error sharing files:", error);
+          manualShareInstructions();
+        }
+      } else {
+        manualShareInstructions();
+      }
+    } else {
+      alert("Please generate files before sharing.");
+    }
+  };
+  const shareimgOnWhatsApp = async () => {
+    if (imageFile) {
+      const files = [imageFile];
       if (navigator.share && navigator.canShare({ files })) {
         try {
           await navigator.share({
@@ -133,15 +155,24 @@ export default function Home() {
         Generate Files
       </Button>
 
-      <Button
-        onClick={shareOnWhatsApp}
-        variant="secondary"
-        className="mb-4 w-full"
-        disabled={!pdfFile || !imageFile}
-      >
-        Share on WhatsApp
-      </Button>
-
+      <div className="flex flex-row gap-3">
+        <Button
+          onClick={shareimgOnWhatsApp}
+          variant="secondary"
+          className="mb-4 w-full"
+          disabled={!pdfFile || !imageFile}
+        >
+          Share img on WhatsApp
+        </Button>
+        <Button
+          onClick={sharepdfOnWhatsApp}
+          variant="secondary"
+          className="mb-4 w-full"
+          disabled={!pdfFile || !imageFile}
+        >
+          Share pdf on WhatsApp
+        </Button>
+      </div>
       {pdfFile && (
         <div className="mt-4">
           <h2 className="text-xl font-bold">Generated PDF:</h2>
