@@ -23,16 +23,23 @@ export default function Home() {
     let yPos = 20;
     const leftColumn = 20;
     const rightColumn = 115;
+    const pageHeight = pdf.internal.pageSize.height;
+    const lineHeight = 8;
 
     ingredients.forEach((ingredient, index) => {
-      //   if (index % 2 === 0 && index !== 0) {
-      //     yPos += 0; // Add space between rows
-      //   }
       const column = index % 2 === 0 ? leftColumn : rightColumn;
+
+      // Check if we need to move to a new page
+      if (yPos > pageHeight - 20) {
+        pdf.addPage();
+        yPos = 20; // Reset yPos for the new page
+      }
+
       pdf.text(`${ingredient.name}`, column, yPos);
       pdf.text(`${ingredient.quantity}`, column + 78, yPos, { align: "right" });
+
       if (index % 2 !== 0) {
-        yPos += 8; // Move to next line after right column
+        yPos += lineHeight; // Move to next line after right column
       }
     });
 
@@ -58,9 +65,6 @@ export default function Home() {
       const rightColumn = 440;
 
       ingredients.forEach((ingredient, index) => {
-        // if (index % 2 === 0 && index !== 0) {
-        //   yPos += 20; // Add space between rows
-        // }
         const column = index % 2 === 0 ? leftColumn : rightColumn;
         ctx.textAlign = "left";
         ctx.fillText(ingredient.name, column, yPos);
